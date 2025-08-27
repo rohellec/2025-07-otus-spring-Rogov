@@ -3,6 +3,7 @@ package ru.otus.hw.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.otus.hw.dao.QuestionDao;
+import ru.otus.hw.domain.Question;
 import ru.otus.hw.domain.Student;
 import ru.otus.hw.domain.TestResult;
 
@@ -23,14 +24,9 @@ public class TestServiceImpl implements TestService {
 
         for (int i = 0; i < questions.size(); ++i) {
             var question = questions.get(i);
-            ioService.printFormattedLine("Question %d: %s", i + 1, question.text());
+            printQuestionWithAnswers(question, i + 1);
+
             var answers = question.answers();
-
-            for (int j = 0; j < answers.size(); ++j) {
-                var answer = answers.get(j);
-                ioService.printFormattedLine("%d) %s", j + 1, answer.text());
-            }
-
             var appliedAnswer = ioService.readIntForRangeWithPrompt(1, answers.size(),
                     "Please enter the number of correct answer",
                     "Incorrect input number!");
@@ -40,5 +36,15 @@ public class TestServiceImpl implements TestService {
             testResult.applyAnswer(question, isAnswerValid);
         }
         return testResult;
+    }
+
+    private void printQuestionWithAnswers(Question question, int order) {
+        ioService.printFormattedLine("Question %d: %s", order, question.text());
+        var answers = question.answers();
+
+        for (int i = 0; i < answers.size(); ++i) {
+            var answer = answers.get(i);
+            ioService.printFormattedLine("%d) %s", i + 1, answer.text());
+        }
     }
 }
