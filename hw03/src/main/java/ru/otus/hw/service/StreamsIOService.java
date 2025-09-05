@@ -7,7 +7,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Scanner;
 
-@Service
+@Service("unlocalized")
 public class StreamsIOService implements IOService {
     private static final int MAX_ATTEMPTS = 10;
 
