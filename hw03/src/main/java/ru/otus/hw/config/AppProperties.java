@@ -2,26 +2,33 @@ package ru.otus.hw.config;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.ConstructorBinding;
 
 import java.util.Locale;
 import java.util.Map;
 
 @Setter
-// Использовать @ConfigurationProperties.
-// Сейчас класс соответствует файлу настроек. Чтобы они сюда отобразились нужно только правильно разместить аннотации
+@ConfigurationProperties(prefix = "test")
 public class AppProperties implements TestConfig, TestFileNameProvider, LocaleConfig {
 
     @Getter
-    private int rightAnswersCountToPass;
+    private final int rightAnswersCountToPass;
 
     @Getter
-    private Locale locale;
+    private final Locale locale;
 
-    private Map<String, String> fileNameByLocaleTag;
+    private final Map<String, String> fileNameByLocaleTag;
 
-    public void setLocale(String locale) {
-        this.locale = Locale.forLanguageTag(locale);
+    @ConstructorBinding
+    public AppProperties(Locale locale,
+                         int rightAnswersCountToPass,
+                         Map<String, String> fileNameByLocaleTag) {
+        this.locale = locale;
+        this.rightAnswersCountToPass = rightAnswersCountToPass;
+        this.fileNameByLocaleTag = fileNameByLocaleTag;
     }
+
 
     @Override
     public String getTestFileName() {

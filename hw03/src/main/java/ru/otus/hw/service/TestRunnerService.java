@@ -1,5 +1,7 @@
 package ru.otus.hw.service;
 
-public interface TestRunnerService {
-    void run();
+import org.springframework.boot.CommandLineRunner;
+
+public interface TestRunnerService extends CommandLineRunner {
+    void run(String... args);
 }
