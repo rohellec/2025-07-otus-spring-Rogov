@@ -4,9 +4,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import ru.otus.hw.domain.Student;
 import ru.otus.hw.domain.TestResult;
 
@@ -15,18 +16,19 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
+@SpringBootTest(classes = TestRunnerServiceImpl.class)
 public class TestRunnerServiceImplTest {
 
-    @Mock
+    @MockitoBean
     private TestService testService;
 
-    @Mock
+    @MockitoBean
     private StudentService studentService;
 
-    @Mock
+    @MockitoBean
     private ResultService resultService;
 
-    @InjectMocks
+    @Autowired
     private TestRunnerServiceImpl testRunnerService;
 
     @DisplayName("run() should execute student's test app using other services")

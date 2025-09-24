@@ -3,31 +3,29 @@ package ru.otus.hw.service;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import ru.otus.hw.config.TestConfig;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import ru.otus.hw.config.AppProperties;
 import ru.otus.hw.domain.Question;
 import ru.otus.hw.domain.Student;
 import ru.otus.hw.domain.TestResult;
 
 import java.util.List;
 
-import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
+@EnableConfigurationProperties(AppProperties.class)
+@SpringBootTest(classes = ResultServiceImpl.class)
 public class ResultServiceImplTest {
 
-    private static final int RIGHT_ANSWERS_COUNT_TO_PASS = 3;
-
-    @Mock
-    private TestConfig testConfig;
-
-    @Mock
+    @MockitoBean
     private LocalizedIOService ioService;
 
-    @InjectMocks
+    @Autowired
     private ResultServiceImpl resultService;
 
     @DisplayName("showResult() should print student's localized test results information")
@@ -45,7 +43,6 @@ public class ResultServiceImplTest {
     @Test
     void shouldOutputPassedTestResultWhenAllAnswersAreCorrect() {
         TestResult testResult = prepareTestResultWithAllCorrectAnswers();
-        given(testConfig.getRightAnswersCountToPass()).willReturn(RIGHT_ANSWERS_COUNT_TO_PASS);
         resultService.showResult(testResult);
         verify(ioService).printLineLocalized("ResultService.passed.test");
     }
@@ -54,7 +51,6 @@ public class ResultServiceImplTest {
     @Test
     void shouldOutputPassedTestResultWhenNumberOfCorrectAnswersMatchesProperty() {
         TestResult testResult = prepareTestResultWithPassedAnswersCount();
-        given(testConfig.getRightAnswersCountToPass()).willReturn(RIGHT_ANSWERS_COUNT_TO_PASS);
         resultService.showResult(testResult);
         verify(ioService).printLineLocalized("ResultService.passed.test");
     }
@@ -63,7 +59,6 @@ public class ResultServiceImplTest {
     @Test
     void shouldOutputFailedTestResultWhenNumberOfCorrectAnswersIsBelowProperty() {
         TestResult testResult = prepareTestResultWithFailedAnswersCount();
-        given(testConfig.getRightAnswersCountToPass()).willReturn(RIGHT_ANSWERS_COUNT_TO_PASS);
         resultService.showResult(testResult);
         verify(ioService).printLineLocalized("ResultService.fail.test");
     }
@@ -72,7 +67,6 @@ public class ResultServiceImplTest {
     @Test
     void shouldOutputFailedTestResultWhenAllAnswersAreIncorrect() {
         TestResult testResult = prepareTestResultWithNoCorrectAnswers();
-        given(testConfig.getRightAnswersCountToPass()).willReturn(RIGHT_ANSWERS_COUNT_TO_PASS);
         resultService.showResult(testResult);
         verify(ioService).printLineLocalized("ResultService.fail.test");
     }

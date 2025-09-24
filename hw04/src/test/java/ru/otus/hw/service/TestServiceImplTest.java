@@ -4,9 +4,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import ru.otus.hw.config.AppProperties;
+import ru.otus.hw.dao.CsvQuestionDao;
 import ru.otus.hw.dao.QuestionDao;
 import ru.otus.hw.domain.Answer;
 import ru.otus.hw.domain.Question;
@@ -20,21 +24,22 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@EnableConfigurationProperties(AppProperties.class)
+@SpringBootTest(classes = {CsvQuestionDao.class, TestServiceImpl.class})
 public class TestServiceImplTest {
 
-    @Mock
+    @MockitoBean
     private LocalizedIOService ioService;
 
-    @Mock
+    @Autowired
     private QuestionDao questionDao;
 
-    @InjectMocks
+    @Autowired
     private TestServiceImpl testService;
 
     @BeforeEach
     void prepareIoServiceInputMocks() {
-        var questions = getQuestions();
-        given(questionDao.findAll()).willReturn(questions);
+        var questions = questionDao.findAll();
         for (var question : questions) {
             var answers = question.answers();
             var lastAnswer = answers.size();
@@ -48,7 +53,7 @@ public class TestServiceImplTest {
     @DisplayName("executeTestFor() should print all localized questions with their corresponding localized answers")
     @Test
     void shouldOutputAllQuestionsWithCorrespondingAnswers() {
-        var questions = getQuestions();
+        var questions = questionDao.findAll();
         var student = new Student("John", "Doe");
         testService.executeTestFor(student);
 
@@ -68,14 +73,14 @@ public class TestServiceImplTest {
                     "TestService.answer.input.number",
                     "TestService.answer.input.number.error");
         }
-        verify(ioService, times(4)).printLine("");
+        verify(ioService, times(5)).printLine("");
         verifyNoMoreInteractions(ioService);
     }
 
     @DisplayName("executeTestFor() should return expected test result for student")
     @Test
     void shouldReturnExpectedTestResult() {
-        var questions = getQuestions();
+        var questions = questionDao.findAll();
         var student = new Student("John", "Doe");
         TestResult testResult = testService.executeTestFor(student);
         assertThat(testResult.getStudent()).isEqualTo(student);

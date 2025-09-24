@@ -3,21 +3,23 @@ package ru.otus.hw.service;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import ru.otus.hw.domain.Student;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith({MockitoExtension.class})
+@SpringBootTest(classes = {StudentServiceImpl.class})
 public class StudentServiceImplTest {
 
-    @Mock
+    @MockitoBean
     private LocalizedIOService ioService;
 
-    @InjectMocks
+    @Autowired
     private StudentServiceImpl studentService;
 
     @DisplayName("determineCurrentStudent() should read first and second name and return new Student")
