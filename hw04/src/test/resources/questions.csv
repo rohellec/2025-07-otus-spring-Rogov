@@ -1,0 +1,4 @@
+# Test line to skip
+Random Question 1?;Q1 Correct answer%true|Q1 Incorrect answer 1%false
+Random Question 2?;Q2 Incorrect answer 1%false|Q2 Correct answer%true|Q2 Incorrect answer 2%false
+Random Question 3?;Q3 Incorrect answer 1%false|Q3 Incorrect answer 2%false|Q3 Incorrect answer 3%false|Q3 Correct answer%true
