@@ -8,6 +8,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.context.annotation.Import;
+import ru.otus.hw.exceptions.EntityNotFoundException;
 import ru.otus.hw.models.Author;
 import ru.otus.hw.models.Book;
 import ru.otus.hw.models.Genre;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("Репозиторий на основе Jdbc для работы с книгами ")
 @JdbcTest
@@ -74,6 +76,16 @@ class JdbcBookRepositoryTest {
                 .isEqualTo(returnedBook);
     }
 
+    @DisplayName("должен бросать исключение при сохранении новой книги без автора")
+    @Test
+    void shouldThrowExceptionWhenSavingNewBookWithoutAuthor() {
+        var expectedBook = new Book(0, "BookTitle_10500", null,
+                List.of(dbGenres.get(0), dbGenres.get(2)));
+        assertThatThrownBy(() -> repositoryJdbc.save(expectedBook))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("not specified");
+    }
+
     @DisplayName("должен сохранять измененную книгу")
     @Test
     void shouldSaveUpdatedBook() {
@@ -94,6 +106,22 @@ class JdbcBookRepositoryTest {
                 .isPresent()
                 .get()
                 .isEqualTo(returnedBook);
+    }
+
+    @DisplayName("должен бросать исключение при сохранении обновлённой книги без автора")
+    @Test
+    void shouldThrowExceptionWhenSavingUpdatedBookWithoutAuthor() {
+        var expectedBook = new Book(1L, "BookTitle_1", null,
+                List.of(dbGenres.get(1), dbGenres.get(2)));
+
+        assertThat(repositoryJdbc.findById(expectedBook.getId()))
+                .isPresent()
+                .get()
+                .isNotEqualTo(expectedBook);
+
+        assertThatThrownBy(() -> repositoryJdbc.save(expectedBook))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("not specified");
     }
 
     @DisplayName("должен удалять книгу по id ")
