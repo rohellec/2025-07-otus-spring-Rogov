@@ -103,9 +103,8 @@ public class JdbcAuthorRepositoryTest {
         jdbcAuthorRepository.deleteById(1L);
         assertThat(jdbcAuthorRepository.findById(1L)).isEmpty();
 
-        jdbcBookRepository.findAll().forEach(book -> {
-           assertThat(book.getAuthor().getId()).isNotEqualTo(1L);
-        });
+        var bookIds = jdbcBookRepository.findAll().stream().map(Book::getId);
+        assertThat(bookIds).doesNotContain(1L);
     }
 
     private static List<Author> getDbAuthors() {
