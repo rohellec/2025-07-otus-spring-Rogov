@@ -6,7 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import ru.otus.hw.exceptions.EntityNotFoundException;
 import ru.otus.hw.models.Genre;
@@ -19,16 +20,18 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("Репозиторий на основе Jdbc для работы с жанрами ")
-@JdbcTest
-@Import({JdbcGenreRepository.class, JdbcBookRepository.class})
-public class JdbcGenreRepositoryTest {
+@DisplayName("Репозиторий на основе JPA для работы с жанрами ")
+@DataJpaTest
+@Import(JpaGenreRepository.class)
+public class JpaGenreRepositoryTest {
+
+    private static final long FIRST_GENRE_ID = 1L;
 
     @Autowired
-    private JdbcGenreRepository jdbcGenreRepository;
+    private TestEntityManager em;
 
     @Autowired
-    private JdbcBookRepository jdbcBookRepository;
+    private JpaGenreRepository jpaGenreRepository;
 
     List<Genre> dbGenres;
 
@@ -40,18 +43,19 @@ public class JdbcGenreRepositoryTest {
     @DisplayName("должен загружать жанр по id")
     @ParameterizedTest
     @MethodSource("getDbGenres")
-    public void shouldFindCorrespondingGenreById(Genre expected) {
-        var actual = jdbcGenreRepository.findById(expected.getId());
+    public void shouldFindCorrespondingGenreById(Genre genre) {
+        var expected = em.find(Genre.class, genre.getId());
+        var actual = jpaGenreRepository.findById(expected.getId());
         assertThat(actual).isPresent()
                 .get()
-                .isEqualTo(expected);
+                .usingRecursiveComparison().isEqualTo(expected);
     }
 
     @DisplayName("должен загружать все жанры")
     @Test
     public void shouldFindAllGenres() {
         var expected = dbGenres;
-        var actual = jdbcGenreRepository.findAll();
+        var actual = jpaGenreRepository.findAll();
         assertThat(actual).containsExactlyInAnyOrderElementsOf(expected);
     }
 
@@ -63,56 +67,57 @@ public class JdbcGenreRepositoryTest {
         var expectedIds = expected.stream()
                 .map(Genre::getId)
                 .collect(Collectors.toSet());
-        var actual = jdbcGenreRepository.findAllByIds(expectedIds);
-        assertThat(actual).containsExactlyElementsOf(expected);
+        var actual = jpaGenreRepository.findAllByIds(expectedIds);
+        assertThat(actual).containsExactlyInAnyOrderElementsOf(expected);
     }
 
     @DisplayName("должен сохранять новый жанр")
     @Test
     public void shouldSaveNewGenre() {
         var expected = new Genre(0, "Genre_100500");
-        var saved = jdbcGenreRepository.save(expected);
+        var saved = jpaGenreRepository.save(expected);
 
         assertThat(saved).isNotNull()
                 .matches(genre -> genre.getId() > 0)
-                .usingRecursiveComparison().ignoringExpectedNullFields().isEqualTo(expected);
+                .usingRecursiveComparison().ignoringExpectedNullFields()
+                .isEqualTo(expected);
 
-        var actual = jdbcGenreRepository.findById(saved.getId());
-        assertThat(actual).isPresent()
-                .get()
+        var actual = em.find(Genre.class, saved.getId());
+        assertThat(actual)
+                .isNotNull()
                 .isEqualTo(saved);
     }
 
     @DisplayName("должен обновить существующий жанр")
     @Test
     public void shouldSaveUpdatedGenre() {
-        var expected = new Genre(1L, "GenreName_100500");
-        var actual = jdbcGenreRepository.findById(expected.getId());
+        var expected = new Genre(FIRST_GENRE_ID, "GenreName_100500");
+        var actual = em.find(Genre.class, expected.getId());
 
-        assertThat(actual).isPresent()
-                .get()
+        assertThat(actual)
+                .isNotNull()
                 .isNotEqualTo(expected);
 
-        var saved = jdbcGenreRepository.save(expected);
+        var saved = jpaGenreRepository.save(expected);
         assertThat(saved).isNotNull()
-                .matches(genre -> genre.getId() == 1L)
-                .usingRecursiveComparison().ignoringExpectedNullFields().isEqualTo(expected);
+                .matches(genre -> genre.getId() == expected.getId())
+                .usingRecursiveComparison().ignoringExpectedNullFields()
+                .isEqualTo(expected);
 
-        actual = jdbcGenreRepository.findById(saved.getId());
-        assertThat(actual).isPresent()
-                .get()
+        actual = em.find(Genre.class, saved.getId());
+        assertThat(actual)
+                .isNotNull()
                 .isEqualTo(saved);
     }
 
-    @DisplayName("должен кинуть исключение в случае отсутствия записи")
+    @DisplayName("должен кинуть исключение в случае обновления отсутствующего жанра")
     @Test
     public void shouldThrowExceptionWhenUpdatedGenreIsNotPresent() {
         var expected = new Genre(1000L, "GenreName_100500");
-        var actual = jdbcGenreRepository.findById(expected.getId());
+        var actual = em.find(Genre.class, expected.getId());
+        assertThat(actual).isNull();
 
-        assertThat(actual).isEmpty();
-
-        assertThatThrownBy(() -> jdbcGenreRepository.save(expected))
+        assertThatThrownBy(() -> jpaGenreRepository.save(expected))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("not found");
     }
@@ -120,14 +125,9 @@ public class JdbcGenreRepositoryTest {
     @DisplayName("должен удалить существующий жанр по id")
     @Test
     public void shouldDeleteGenreById() {
-        assertThat(jdbcGenreRepository.findById(1L)).isPresent();
-        jdbcGenreRepository.deleteById(1L);
-        assertThat(jdbcGenreRepository.findById(1L)).isEmpty();
-
-        jdbcBookRepository.findAll().forEach(book -> {
-            var genreIds = book.getGenres().stream().map(Genre::getId).collect(Collectors.toSet());
-            assertThat(genreIds).doesNotContain(1L);
-        });
+        assertThat(em.find(Genre.class, FIRST_GENRE_ID)).isNotNull();
+        jpaGenreRepository.deleteById(FIRST_GENRE_ID);
+        assertThat(em.find(Genre.class, FIRST_GENRE_ID)).isNull();
     }
 
     private static List<Genre> getDbGenres() {
