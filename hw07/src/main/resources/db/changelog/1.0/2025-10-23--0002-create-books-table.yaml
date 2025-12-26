@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2025-10-23--0002-create-books-table
+      author: ds.rogv
+      changes:
+        - createTable:
+            tableName: books
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: title
+                  type: varchar(255)
+              - column:
+                  name: author_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    references: authors(id)
+                    foreignKeyName: fk_books_authors
+                    deleteCascade: true
